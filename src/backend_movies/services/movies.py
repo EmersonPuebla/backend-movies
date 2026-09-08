@@ -14,9 +14,25 @@ def find_all_movies() -> list[Movie] | None:
     return movies_db
 
 def create_movie(movie: Movie) -> bool:
-    for movie in movies_db:
-        if movie.id == movie.id:
+    for stored_movie in movies_db:
+        if stored_movie.id == movie.id:
             return False
 
     movies_db.append(movie)
     return True
+
+def update_movie(movie_id: int, movie: Movie) -> bool:
+    for index, stored_movie in enumerate(movies_db):
+        if stored_movie.id == movie_id:
+            movies_db[index] = movie
+            return True
+
+    return False
+
+def delete_movie(movie_id: int) -> bool:
+    for index, movie in enumerate(movies_db):
+        if movie.id == movie_id:
+            del movies_db[index]
+            return True
+
+    return False
