@@ -7,7 +7,9 @@ class MovieMeta(BaseModel):
     release_date: date
     duration: int
 
-class Movie(BaseModel):
-    id: int
+class MovieData(BaseModel):
     name: str
     meta: MovieMeta
+
+class Movie(MovieData):
+    id: int
