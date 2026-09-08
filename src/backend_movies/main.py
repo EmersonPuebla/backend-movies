@@ -5,8 +5,10 @@ from backend_movies.models.movie import Movie
 from backend_movies.models.response import Response
 from backend_movies.services.movies import (
     create_movie,
+    delete_movie,
     find_all_movies,
     find_movie_by_id,
+    update_movie,
 )
 
 app = FastAPI()
@@ -58,4 +60,37 @@ def add_movie(movie: Movie) -> Response[None]:
     return Response(
         code=AppCode.MOVIE_ADDED,
         message=f"Se ha añadido la pelicula {movie.name}",
+    )
+
+@app.put("/movies/{movie_id}")
+def edit_movie(movie_id: int, movie: Movie) -> Response[Movie]:
+    if movie.id != movie_id:
+        return Response(
+            code=AppCode.MOVIE_NOT_UPDATED,
+            message="El id de la ruta debe coincidir con el id de la pelicula",
+        )
+
+    if not update_movie(movie_id, movie):
+        return Response(
+            code=AppCode.MOVIE_NOT_UPDATED,
+            message=f"No se ha encontrado la pelicula con id {movie_id}",
+        )
+
+    return Response(
+        code=AppCode.MOVIE_UPDATED,
+        message=f"Se ha actualizado la pelicula {movie.name}",
+        data=movie,
+    )
+
+@app.delete("/movies/{movie_id}")
+def remove_movie(movie_id: int) -> Response[None]:
+    if not delete_movie(movie_id):
+        return Response(
+            code=AppCode.MOVIE_NOT_DELETED,
+            message=f"No se ha encontrado la pelicula con id {movie_id}",
+        )
+
+    return Response(
+        code=AppCode.MOVIE_DELETED,
+        message=f"Se ha eliminado la pelicula con id {movie_id}",
     )
