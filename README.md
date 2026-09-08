@@ -24,8 +24,8 @@ Endpoints disponibles
 ---
 * `GET /movies`: listar todas las peliculas.
 * `GET /movies/{movie_id}`: consultar una pelicula por id.
-* `POST /movies`: crear una pelicula.
-* `PUT /movies/{movie_id}`: reemplazar una pelicula existente.
+* `POST /movies`: crear una pelicula. El ID se genera automaticamente.
+* `PUT /movies/{movie_id}`: reemplazar una pelicula existente usando el ID de la ruta.
 * `DELETE /movies/{movie_id}`: eliminar una pelicula.
 
 El almacenamiento actual es en memoria, por lo que las peliculas se reinician al detener la aplicacion.

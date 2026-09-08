@@ -1,5 +1,7 @@
 from backend_movies.data.mock import movies_db
-from backend_movies.models.movie import Movie
+from backend_movies.models.movie import Movie, MovieData
+
+next_movie_id = 1
 
 def find_movie_by_id(movie_id: int) -> Movie | None:
     for movie in movies_db:
@@ -13,21 +15,25 @@ def find_all_movies() -> list[Movie] | None:
 
     return movies_db
 
-def create_movie(movie: Movie) -> bool:
-    for stored_movie in movies_db:
-        if stored_movie.id == movie.id:
-            return False
+def create_movie(movie_data: MovieData) -> Movie:
+    global next_movie_id
 
+    while find_movie_by_id(next_movie_id) is not None:
+        next_movie_id += 1
+
+    movie = Movie(id=next_movie_id, **movie_data.model_dump())
     movies_db.append(movie)
-    return True
+    next_movie_id += 1
+    return movie
 
-def update_movie(movie_id: int, movie: Movie) -> bool:
+def update_movie(movie_id: int, movie_data: MovieData) -> Movie | None:
     for index, stored_movie in enumerate(movies_db):
         if stored_movie.id == movie_id:
+            movie = Movie(id=movie_id, **movie_data.model_dump())
             movies_db[index] = movie
-            return True
+            return movie
 
-    return False
+    return None
 
 def delete_movie(movie_id: int) -> bool:
     for index, movie in enumerate(movies_db):

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from backend_movies.models.app_codes import AppCode
-from backend_movies.models.movie import Movie
+from backend_movies.models.movie import Movie, MovieData
 from backend_movies.models.response import Response
 from backend_movies.services.movies import (
     create_movie,
@@ -49,28 +49,19 @@ def get_movie_by_id(movie_id: int) -> Response[Movie]:
     )
 
 @app.post("/movies")
-def add_movie(movie: Movie) -> Response[None]:
-
-    if not create_movie(movie):
-        return Response(
-            code=AppCode.MOVIE_NOT_ADDED,
-            message="No se ha podido añadir la pelicula",
-        )
+def add_movie(movie_data: MovieData) -> Response[Movie]:
+    movie = create_movie(movie_data)
 
     return Response(
         code=AppCode.MOVIE_ADDED,
         message=f"Se ha añadido la pelicula {movie.name}",
+        data=movie,
     )
 
 @app.put("/movies/{movie_id}")
-def edit_movie(movie_id: int, movie: Movie) -> Response[Movie]:
-    if movie.id != movie_id:
-        return Response(
-            code=AppCode.MOVIE_NOT_UPDATED,
-            message="El id de la ruta debe coincidir con el id de la pelicula",
-        )
-
-    if not update_movie(movie_id, movie):
+def edit_movie(movie_id: int, movie_data: MovieData) -> Response[Movie]:
+    movie = update_movie(movie_id, movie_data)
+    if movie is None:
         return Response(
             code=AppCode.MOVIE_NOT_UPDATED,
             message=f"No se ha encontrado la pelicula con id {movie_id}",
