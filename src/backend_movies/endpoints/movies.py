@@ -1,4 +1,9 @@
-from fastapi import APIRouter, Depends
+import sqlite3
+import uuid
+from pathlib import Path
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from backend_movies.auth import require_auth
 from backend_movies.models.app_codes import AppCode
@@ -13,6 +18,15 @@ from backend_movies.services.movies import (
 )
 
 router = APIRouter(dependencies=[Depends(require_auth)])
+
+STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
+MAX_IMAGE_SIZE_MB = 5
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
 
 
 @router.get("/movies")
@@ -52,7 +66,13 @@ def get_movie_by_id(movie_id: int) -> Response[Movie]:
 
 @router.post("/movies")
 def add_movie(movie_data: MovieData) -> Response[Movie]:
-    movie = create_movie(movie_data)
+    try:
+        movie = create_movie(movie_data)
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El slug ya existe",
+        )
 
     return Response(
         code=AppCode.MOVIE_ADDED,
@@ -63,7 +83,14 @@ def add_movie(movie_data: MovieData) -> Response[Movie]:
 
 @router.put("/movies/{movie_id}")
 def edit_movie(movie_id: int, movie_data: MovieData) -> Response[Movie]:
-    movie = update_movie(movie_id, movie_data)
+    try:
+        movie = update_movie(movie_id, movie_data)
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El slug ya existe",
+        )
+
     if movie is None:
         return Response(
             code=AppCode.MOVIE_NOT_UPDATED,
@@ -88,4 +115,32 @@ def remove_movie(movie_id: int) -> Response[None]:
     return Response(
         code=AppCode.MOVIE_DELETED,
         message=f"Se ha eliminado la pelicula con id {movie_id}",
+    )
+
+
+@router.post("/movies/upload")
+async def upload_movie_image(
+    file: Annotated[UploadFile, File()],
+) -> Response[dict]:
+    extension = ALLOWED_IMAGE_TYPES.get(file.content_type or "")
+    if extension is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de imagen no permitido",
+        )
+
+    contents = await file.read()
+    if len(contents) > MAX_IMAGE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La imagen supera el límite de {MAX_IMAGE_SIZE_MB} MB",
+        )
+
+    filename = f"{uuid.uuid4().hex}{extension}"
+    (STATIC_DIR / filename).write_bytes(contents)
+
+    return Response(
+        code=AppCode.SUCCESS,
+        message="Imagen subida correctamente",
+        data={"url": f"/static/{filename}"},
     )
