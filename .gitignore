@@ -151,6 +151,9 @@ activemq-data/
 .env
 .envrc
 .venv
+
+# SQLite database
+movies.db
 env/
 venv/
 ENV/

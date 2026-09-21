@@ -1,87 +1,27 @@
-from fastapi import FastAPI
+from pathlib import Path
 
-from backend_movies.models.app_codes import AppCode
-from backend_movies.models.movie import Movie, MovieData
-from backend_movies.models.response import Response
-from backend_movies.services.movies import (
-    create_movie,
-    delete_movie,
-    find_all_movies,
-    find_movie_by_id,
-    update_movie,
-)
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from backend_movies.db import init_db
+from backend_movies.endpoints.movies import router as movies_router
+
+init_db()
+
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI()
 
-@app.get("/movies")
-def get_movies_catalog() -> Response[list[Movie] | None]:
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4321"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    movies = find_all_movies()
+# Movie posters are served publicly from the backend (loaded via <img src>),
+# while the movie data itself remains protected by the movies router below.
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-    if not movies:
-        return Response(
-            code=AppCode.MOVIE_EMPTY,
-            message="No existen peliculas disponibles",
-        )
-
-    return Response(
-        code=AppCode.MOVIE_FOUND,
-        message=f"Se han encontrado {len(movies)} peliculas",
-        data=movies,
-    )
-
-@app.get("/movies/{movie_id}")
-def get_movie_by_id(movie_id: int) -> Response[Movie]:
-
-    movie = find_movie_by_id(movie_id)
-
-    if not movie:
-        return Response(
-            code=AppCode.MOVIE_NOT_FOUND,
-            message=f"No se ha encontrado la pelicula con id {movie_id}",
-            data=movie,
-        )
-
-    return Response(
-        code=AppCode.MOVIE_FOUND,
-        message="Pelicula encontrada",
-        data=movie,
-    )
-
-@app.post("/movies")
-def add_movie(movie_data: MovieData) -> Response[Movie]:
-    movie = create_movie(movie_data)
-
-    return Response(
-        code=AppCode.MOVIE_ADDED,
-        message=f"Se ha añadido la pelicula {movie.name}",
-        data=movie,
-    )
-
-@app.put("/movies/{movie_id}")
-def edit_movie(movie_id: int, movie_data: MovieData) -> Response[Movie]:
-    movie = update_movie(movie_id, movie_data)
-    if movie is None:
-        return Response(
-            code=AppCode.MOVIE_NOT_UPDATED,
-            message=f"No se ha encontrado la pelicula con id {movie_id}",
-        )
-
-    return Response(
-        code=AppCode.MOVIE_UPDATED,
-        message=f"Se ha actualizado la pelicula {movie.name}",
-        data=movie,
-    )
-
-@app.delete("/movies/{movie_id}")
-def remove_movie(movie_id: int) -> Response[None]:
-    if not delete_movie(movie_id):
-        return Response(
-            code=AppCode.MOVIE_NOT_DELETED,
-            message=f"No se ha encontrado la pelicula con id {movie_id}",
-        )
-
-    return Response(
-        code=AppCode.MOVIE_DELETED,
-        message=f"Se ha eliminado la pelicula con id {movie_id}",
-    )
+app.include_router(movies_router)

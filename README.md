@@ -28,4 +28,14 @@ Endpoints disponibles
 * `PUT /movies/{movie_id}`: reemplazar una pelicula existente usando el ID de la ruta.
 * `DELETE /movies/{movie_id}`: eliminar una pelicula.
 
-El almacenamiento actual es en memoria, por lo que las peliculas se reinician al detener la aplicacion.
+El almacenamiento se realiza en SQLite (libreria estandar `sqlite3`) en el archivo `movies.db`.
+
+## Autenticacion
+
+Todos los endpoints exigen un access token de Amazon Cognito en la cabecera `Authorization: Bearer <token>`.
+
+Configura las variables `COGNITO_REGION`, `COGNITO_USER_POOL_ID` y `COGNITO_CLIENT_ID` (ver `.env.example`) y arranca con:
+
+```bash
+uv run --env-file .env fastapi dev src/backend_movies/main.py
+```
