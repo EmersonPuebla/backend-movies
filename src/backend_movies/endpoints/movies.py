@@ -1,11 +1,11 @@
 import sqlite3
 import uuid
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from backend_movies.auth import require_auth
+from backend_movies.config import STATIC_DIR
 from backend_movies.models.app_codes import AppCode
 from backend_movies.models.movie import Movie, MovieData
 from backend_movies.models.response import Response
@@ -19,7 +19,6 @@ from backend_movies.services.movies import (
 
 router = APIRouter(dependencies=[Depends(require_auth)])
 
-STATIC_DIR = Path(__file__).resolve().parents[1] / "static"
 MAX_IMAGE_SIZE_MB = 5
 ALLOWED_IMAGE_TYPES = {
     "image/jpeg": ".jpg",

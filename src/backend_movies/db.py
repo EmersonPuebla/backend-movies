@@ -1,7 +1,6 @@
 import sqlite3
-from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parents[2] / "movies.db"
+from backend_movies.config import DB_PATH
 
 SEED_MOVIES = [
     (
